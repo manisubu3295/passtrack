@@ -74,13 +74,24 @@ export function EarlyAccessPopup() {
       });
 
       if (!response.ok) {
-        throw new Error('Submission failed');
+        let errorReason = `Submission failed (HTTP ${response.status})`;
+
+        try {
+          const data = (await response.json()) as { error?: string };
+          if (data?.error) {
+            errorReason = data.error;
+          }
+        } catch {
+          // Ignore parse errors and keep fallback errorReason.
+        }
+
+        throw new Error(errorReason);
       }
 
       setSuccessMessage('Thank you. We will notify you when early access begins.');
       setFormValues(initialState);
-    } catch {
-      setErrorMessage('Unable to submit right now. Please try again shortly.');
+    } catch (submitError) {
+      setErrorMessage(submitError instanceof Error ? submitError.message : 'Submission failed.');
     } finally {
       setIsSubmitting(false);
     }

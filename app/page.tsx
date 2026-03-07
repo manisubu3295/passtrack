@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { EarlyAccessForm } from '@/components/early-access-form';
 import { EarlyAccessPopup } from '@/components/early-access-popup';
 import { DashboardMockup } from '@/components/dashboard-mockup';
@@ -67,7 +68,16 @@ export default function HomePage() {
           <div className="section-shell grid gap-8 overflow-hidden px-4 py-5 sm:px-6 sm:py-6 md:grid-cols-2 md:items-center md:gap-10 md:px-10 md:py-10 lg:gap-12">
             <div>
               <FadeUp>
-                <span className="hero-kicker">🇸🇬 Built for Singapore HR Operations</span>
+                <span className="hero-kicker">
+                  <Image
+                    src="/passtrack-logo.jpeg"
+                    alt="PassTrack logo"
+                    width={20}
+                    height={20}
+                    className="rounded-sm object-cover"
+                  />
+                  Built for Singapore HR Operations
+                </span>
               </FadeUp>
             <FadeUp delay={0.05}>
               <h1 className="mt-4 text-[2rem] font-bold leading-[1.08] tracking-[-0.02em] text-primary sm:text-4xl md:text-5xl lg:text-[56px]">
@@ -220,7 +230,14 @@ export default function HomePage() {
               Contact on WhatsApp
             </a>
           </div>
-          <div className="flex flex-col gap-1 md:items-end">
+          <div className="flex items-center gap-2 md:justify-end">
+            <Image
+              src="/passtrack-logo.jpeg"
+              alt="PassTrack logo"
+              width={24}
+              height={24}
+              className="rounded-sm object-cover"
+            />
             <p>© PassTrack Singapore</p>
           </div>
         </div>

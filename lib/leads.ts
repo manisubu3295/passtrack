@@ -14,6 +14,34 @@ export type LeadRecord = LeadPayload & {
   createdAt: string;
 };
 
+const normalizeWhatsapp = (raw?: string) => {
+  const value = raw?.trim() ?? '';
+
+  if (!value) {
+    return '';
+  }
+
+  const compact = value.replace(/[\s()-]/g, '');
+
+  if (/^\d{8}$/.test(compact)) {
+    return `+65${compact}`;
+  }
+
+  if (/^65\d{8}$/.test(compact)) {
+    return `+${compact}`;
+  }
+
+  if (/^\+\d{8,15}$/.test(compact)) {
+    return compact;
+  }
+
+  if (/^\d{8,15}$/.test(compact)) {
+    return `+${compact}`;
+  }
+
+  return null;
+};
+
 const dataDirectory = path.join(process.cwd(), 'data');
 const dataFile = path.join(dataDirectory, 'leads.json');
 
@@ -64,19 +92,32 @@ const ensureTable = async () => {
 };
 
 export const isValidLeadPayload = (payload: LeadPayload) => {
-  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email);
-  const employeesNum = Number(payload.employees);
-  const whatsapp = payload.whatsapp?.trim() ?? '';
-  const validWhatsapp = whatsapp.length === 0 || /^[+\d\s()-]{7,20}$/.test(whatsapp);
+  return getLeadValidationError(payload) === null;
+};
 
-  return (
-    payload.name.trim().length > 1 &&
-    payload.company.trim().length > 1 &&
-    validEmail &&
-    Number.isFinite(employeesNum) &&
-    employeesNum > 0 &&
-    validWhatsapp
-  );
+export const getLeadValidationError = (payload: LeadPayload): string | null => {
+  if (payload.name.trim().length <= 1) {
+    return 'Name must be at least 2 characters.';
+  }
+
+  if (payload.company.trim().length <= 1) {
+    return 'Company must be at least 2 characters.';
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+    return 'Please enter a valid work email address.';
+  }
+
+  const employeesNum = Number(payload.employees);
+  if (!Number.isFinite(employeesNum) || employeesNum <= 0) {
+    return 'Number of employees must be greater than 0.';
+  }
+
+  if (normalizeWhatsapp(payload.whatsapp) === null) {
+    return 'WhatsApp number format is invalid. Use 90356479 or +6590356479.';
+  }
+
+  return null;
 };
 
 const toRecord = (payload: LeadPayload): LeadRecord => ({
@@ -84,7 +125,7 @@ const toRecord = (payload: LeadPayload): LeadRecord => ({
   company: payload.company.trim(),
   email: payload.email.trim().toLowerCase(),
   employees: payload.employees,
-  whatsapp: payload.whatsapp?.trim() ?? '',
+  whatsapp: normalizeWhatsapp(payload.whatsapp) ?? '',
   createdAt: new Date().toISOString(),
 });
 
@@ -112,18 +153,22 @@ export const saveLead = async (payload: LeadPayload) => {
   await writeFileLead(newLead);
 
   if (pool) {
-    await ensureTable();
-    await pool.query(
-      'INSERT INTO leads (name, company, email, employees, whatsapp, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
-      [
-        newLead.name,
-        newLead.company,
-        newLead.email,
-        newLead.employees,
-        newLead.whatsapp,
-        newLead.createdAt,
-      ]
-    );
+    try {
+      await ensureTable();
+      await pool.query(
+        'INSERT INTO leads (name, company, email, employees, whatsapp, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
+        [
+          newLead.name,
+          newLead.company,
+          newLead.email,
+          newLead.employees,
+          newLead.whatsapp,
+          newLead.createdAt,
+        ]
+      );
+    } catch (error) {
+      console.error('Postgres write failed. Lead saved to file backup.', error);
+    }
   }
 };
 
@@ -131,26 +176,30 @@ export const getLeads = async (): Promise<LeadRecord[]> => {
   const pool = getPool();
 
   if (pool) {
-    await ensureTable();
-    const result = await pool.query<{
-      name: string;
-      company: string;
-      email: string;
-      employees: string;
-      whatsapp: string | null;
-      created_at: string;
-    }>(
-      'SELECT name, company, email, employees, whatsapp, created_at FROM leads ORDER BY created_at DESC'
-    );
+    try {
+      await ensureTable();
+      const result = await pool.query<{
+        name: string;
+        company: string;
+        email: string;
+        employees: string;
+        whatsapp: string | null;
+        created_at: string;
+      }>(
+        'SELECT name, company, email, employees, whatsapp, created_at FROM leads ORDER BY created_at DESC'
+      );
 
-    return result.rows.map((row) => ({
-      name: row.name,
-      company: row.company,
-      email: row.email,
-      employees: row.employees,
-      whatsapp: row.whatsapp ?? '',
-      createdAt: new Date(row.created_at).toISOString(),
-    }));
+      return result.rows.map((row) => ({
+        name: row.name,
+        company: row.company,
+        email: row.email,
+        employees: row.employees,
+        whatsapp: row.whatsapp ?? '',
+        createdAt: new Date(row.created_at).toISOString(),
+      }));
+    } catch (error) {
+      console.error('Postgres read failed. Falling back to file storage.', error);
+    }
   }
 
   const leads = await readFileLeads();
