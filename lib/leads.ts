@@ -150,7 +150,7 @@ export const saveLead = async (payload: LeadPayload) => {
   const newLead = toRecord(payload);
   const pool = getPool();
 
-  await writeFileLead(newLead);
+  let persisted = false;
 
   if (pool) {
     try {
@@ -166,9 +166,35 @@ export const saveLead = async (payload: LeadPayload) => {
           newLead.createdAt,
         ]
       );
+      persisted = true;
     } catch (error) {
-      console.error('Postgres write failed. Lead saved to file backup.', error);
+      console.error('Postgres write failed.', error);
     }
+  }
+
+  const shouldAttemptFile = !persisted || process.env.NODE_ENV !== 'production';
+
+  if (shouldAttemptFile) {
+    try {
+      await writeFileLead(newLead);
+      persisted = true;
+    } catch (error) {
+      console.error('File write failed for lead backup.', error);
+
+      if (!persisted) {
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error(
+            'Lead storage is not configured for production. Set DATABASE_URL for persistent storage.'
+          );
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  if (!persisted) {
+    throw new Error('Lead could not be saved to any storage backend.');
   }
 };
 
