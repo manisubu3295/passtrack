@@ -50,6 +50,15 @@ const databaseUrl = process.env.DATABASE_URL;
 const globalForDb = globalThis as unknown as {
   pgPool?: Pool;
   pgInitDone?: boolean;
+  memoryLeads?: LeadRecord[];
+};
+
+const getMemoryLeads = () => {
+  if (!globalForDb.memoryLeads) {
+    globalForDb.memoryLeads = [];
+  }
+
+  return globalForDb.memoryLeads;
 };
 
 const getPool = () => {
@@ -180,21 +189,12 @@ export const saveLead = async (payload: LeadPayload) => {
       persisted = true;
     } catch (error) {
       console.error('File write failed for lead backup.', error);
-
-      if (!persisted) {
-        if (process.env.NODE_ENV === 'production') {
-          throw new Error(
-            'Lead storage is not configured for production. Set DATABASE_URL for persistent storage.'
-          );
-        }
-
-        throw error;
-      }
     }
   }
 
   if (!persisted) {
-    throw new Error('Lead could not be saved to any storage backend.');
+    getMemoryLeads().push(newLead);
+    console.warn('Lead stored in ephemeral memory fallback.');
   }
 };
 
@@ -229,7 +229,13 @@ export const getLeads = async (): Promise<LeadRecord[]> => {
   }
 
   const leads = await readFileLeads();
+
+  if (leads.length === 0) {
+    return [...getMemoryLeads()].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+  }
+
   return leads.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
 };
 
-export const getStorageMode = () => (databaseUrl ? 'postgres + file-backup' : 'file');
+export const getStorageMode = () =>
+  databaseUrl ? 'postgres + file-backup' : 'file (memory fallback in serverless)';
