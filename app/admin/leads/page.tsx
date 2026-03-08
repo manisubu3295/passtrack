@@ -31,30 +31,34 @@ export default async function AdminLeadsPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-[0.08em] text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Full Name</th>
                   <th className="px-4 py-3">Company</th>
-                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Work Email</th>
                   <th className="px-4 py-3">WhatsApp</th>
-                  <th className="px-4 py-3">Employees</th>
+                  <th className="px-4 py-3">Company Size</th>
+                  <th className="px-4 py-3">Primary Need</th>
+                  <th className="px-4 py-3">Source</th>
                   <th className="px-4 py-3">Submitted (SGT)</th>
                 </tr>
               </thead>
               <tbody>
                 {leads.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-10 text-center text-slate-500">
                       No leads yet.
                     </td>
                   </tr>
                 ) : (
                   leads.map((lead) => (
-                    <tr key={`${lead.email}-${lead.createdAt}`} className="border-t border-slate-100">
+                    <tr key={`${lead.workEmail}-${lead.timestamp}`} className="border-t border-slate-100">
                       <td className="px-4 py-3 font-medium text-slate-900">{lead.name}</td>
                       <td className="px-4 py-3 text-slate-700">{lead.company}</td>
-                      <td className="px-4 py-3 text-slate-700">{lead.email}</td>
+                      <td className="px-4 py-3 text-slate-700">{lead.workEmail}</td>
                       <td className="px-4 py-3 text-slate-700">{lead.whatsapp || '-'}</td>
-                      <td className="px-4 py-3 text-slate-700">{lead.employees}</td>
-                      <td className="px-4 py-3 text-slate-700">{formatDate(lead.createdAt)}</td>
+                      <td className="px-4 py-3 text-slate-700">{lead.employeeCount}</td>
+                      <td className="px-4 py-3 text-slate-700">{lead.primaryNeed}</td>
+                      <td className="px-4 py-3 text-slate-700">{lead.source}</td>
+                      <td className="px-4 py-3 text-slate-700">{formatDate(lead.timestamp)}</td>
                     </tr>
                   ))
                 )}

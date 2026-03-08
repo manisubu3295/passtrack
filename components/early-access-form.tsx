@@ -2,21 +2,24 @@
 
 import { FormEvent, useState } from 'react';
 import { motion } from 'framer-motion';
+import { employeeCountOptions, primaryNeedOptions } from '@/lib/lead-options';
 
 type FormState = {
   name: string;
   company: string;
-  email: string;
-  employees: string;
+  workEmail: string;
+  employeeCount: string;
   whatsapp: string;
+  primaryNeed: string;
 };
 
 const initialState: FormState = {
   name: '',
   company: '',
-  email: '',
-  employees: '',
+  workEmail: '',
+  employeeCount: '',
   whatsapp: '',
+  primaryNeed: '',
 };
 
 export function EarlyAccessForm() {
@@ -37,7 +40,10 @@ export function EarlyAccessForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          source: 'landing-form',
+        }),
       });
 
       if (!response.ok) {
@@ -74,7 +80,7 @@ export function EarlyAccessForm() {
       </div>
       <div className="grid gap-4">
         <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600">
-          Name
+          Full Name
           <input
             required
             name="name"
@@ -85,7 +91,7 @@ export function EarlyAccessForm() {
         </label>
 
         <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600">
-          Company
+          Company Name
           <input
             required
             name="company"
@@ -100,29 +106,34 @@ export function EarlyAccessForm() {
           <input
             required
             type="email"
-            name="email"
-            value={values.email}
-            onChange={(event) => setValues((prev) => ({ ...prev, email: event.target.value }))}
+            name="workEmail"
+            value={values.workEmail}
+            onChange={(event) => setValues((prev) => ({ ...prev, workEmail: event.target.value }))}
             className="mt-1.5 w-full rounded-lg border border-white/60 bg-white/75 px-3 py-2.5 text-sm font-medium text-slate-900 outline-none ring-red-200 transition focus:ring"
           />
         </label>
 
         <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600">
-          Number of Employees
-          <input
+          Company Size
+          <select
             required
-            type="number"
-            min={1}
-            name="employees"
-            value={values.employees}
+            name="employeeCount"
+            value={values.employeeCount}
             onChange={(event) =>
               setValues((prev) => ({
                 ...prev,
-                employees: event.target.value,
+                employeeCount: event.target.value,
               }))
             }
             className="mt-1.5 w-full rounded-lg border border-white/60 bg-white/75 px-3 py-2.5 text-sm font-medium text-slate-900 outline-none ring-red-200 transition focus:ring"
-          />
+          >
+            <option value="">Select company size</option>
+            {employeeCountOptions.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600">
@@ -141,6 +152,29 @@ export function EarlyAccessForm() {
           />
         </label>
 
+        <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600">
+          Primary Need
+          <select
+            required
+            name="primaryNeed"
+            value={values.primaryNeed}
+            onChange={(event) =>
+              setValues((prev) => ({
+                ...prev,
+                primaryNeed: event.target.value,
+              }))
+            }
+            className="mt-1.5 w-full rounded-lg border border-white/60 bg-white/75 px-3 py-2.5 text-sm font-medium text-slate-900 outline-none ring-red-200 transition focus:ring"
+          >
+            <option value="">Select primary need</option>
+            {primaryNeedOptions.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <motion.button
           type="submit"
           disabled={isSubmitting}
@@ -155,6 +189,9 @@ export function EarlyAccessForm() {
 
       {message ? <p className="mt-4 text-sm font-medium text-emerald-700">{message}</p> : null}
       {error ? <p className="mt-4 text-sm font-medium text-accent">{error}</p> : null}
+      <p className="mt-3 text-xs text-slate-500">
+        We’ll only use your details to contact you about PassTrack early access.
+      </p>
     </form>
   );
 }

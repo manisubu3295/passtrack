@@ -66,10 +66,12 @@ export function EarlyAccessPopup() {
         },
         body: JSON.stringify({
           name: formValues.name,
-          email: formValues.email,
+          workEmail: formValues.email,
           company: formValues.company,
-          employees: '1',
+          employeeCount: '11–50',
           whatsapp: '',
+          primaryNeed: 'Track pass expiries',
+          source: 'scroll-popup',
         }),
       });
 

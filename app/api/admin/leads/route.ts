@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getLeads, getStorageMode } from '@/lib/leads';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
   const leads = await getLeads();
   return NextResponse.json({

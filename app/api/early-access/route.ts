@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLeadValidationError, LeadPayload, saveLead } from '@/lib/leads';
+import { LeadPayload, submitLead } from '@/lib/leads';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   let body: LeadPayload;
@@ -10,17 +12,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 });
   }
 
-  const validationError = getLeadValidationError(body);
-  if (validationError) {
-    return NextResponse.json({ error: validationError }, { status: 400 });
-  }
+  const result = await submitLead(body);
 
-  try {
-    await saveLead(body);
-  } catch (error) {
-    console.error('Lead submission failed.', error);
-    const reason = error instanceof Error ? error.message : 'Unknown error.';
-    return NextResponse.json({ error: `Unable to save lead: ${reason}` }, { status: 500 });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
   return NextResponse.json({ ok: true });
